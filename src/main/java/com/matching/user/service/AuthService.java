@@ -31,9 +31,6 @@ public class AuthService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
     @Value("${jwt.secret}")
     private String jwtSecret;
 
