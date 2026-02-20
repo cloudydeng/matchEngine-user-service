@@ -14,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +29,9 @@ public class AuthService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -69,9 +71,8 @@ public class AuthService {
             throw new RuntimeException("手机号已被注册");
         }
 
-        // 3. 密码加密
-        String salt = UUID.randomUUID().toString().substring(0, 16);
-        String passwordHash = passwordEncoder.hash(request.getPassword(), salt);
+        // 3. 密码加密 (使用 BCrypt)
+        String passwordHash = passwordEncoder.encode(request.getPassword());
 
         // 4. 创建用户
         User user = User.builder()
@@ -79,7 +80,6 @@ public class AuthService {
                 .email(request.getEmail())
                 .phone(request.getPhoneVerificationCode() != null ? request.getPhone() : null)
                 .passwordHash(passwordHash)
-                .salt(salt)
                 .phoneVerified(request.getPhoneVerificationCode() != null)
                 .emailVerified(true)  // 邮箱验证后自动设置
                 .status(UserStatus.ACTIVE)
@@ -103,7 +103,7 @@ public class AuthService {
     public User login(LoginRequest request, DeviceInfo deviceInfo) {
         // 1. 检查登录限流
         String failKey = LOGIN_FAIL_PREFIX + request.getUsername();
-        Long failCount = redisTemplate.opsForValue().get(failKey);
+        Long failCount = (Long) redisTemplate.opsForValue().get(failKey);
         if (failCount != null && failCount >= 5) {
             // 清除计数
             redisTemplate.delete(failKey);
@@ -178,7 +178,7 @@ public class AuthService {
      */
     public Long verifyToken(String token) {
         String key = TOKEN_PREFIX + token;
-        String userIdStr = redisTemplate.opsForValue().get(key);
+        String userIdStr = (String) redisTemplate.opsForValue().get(key);
 
         if (userIdStr == null) {
             return null;
@@ -201,7 +201,7 @@ public class AuthService {
 
         // 限制发送频率
         String rateKey = RATE_LIMIT_PREFIX + type + ":" + destination;
-        Long count = redisTemplate.opsForValue().get(rateKey);
+        Long count = (Long) redisTemplate.opsForValue().get(rateKey);
         if (count != null && count >= 5) {
             throw new RuntimeException("发送频率过快，请稍后再试");
         }
@@ -220,7 +220,7 @@ public class AuthService {
      */
     public boolean verifyCode(String type, String destination, String code) {
         String key = VERIFY_CODE_PREFIX + type + ":" + destination;
-        String savedCode = redisTemplate.opsForValue().get(key);
+        String savedCode = (String) redisTemplate.opsForValue().get(key);
 
         if (savedCode == null) {
             return false;

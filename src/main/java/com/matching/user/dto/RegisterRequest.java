@@ -40,5 +40,7 @@ public class RegisterRequest {
 
     private String referralCode;  // 推荐码
 
+    private String phone;  // 手机号
+
     private DeviceInfo deviceInfo;
 }

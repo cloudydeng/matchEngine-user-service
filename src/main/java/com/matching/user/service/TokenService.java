@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,7 +63,7 @@ public class TokenService {
 
         // 检查 Access Token
         String accessKey = TOKEN_PREFIX + "access:" + token;
-        String userIdStr = redisTemplate.opsForValue().get(accessKey);
+        String userIdStr = (String) redisTemplate.opsForValue().get(accessKey);
 
         if (userIdStr != null) {
             return Long.parseLong(userIdStr);
@@ -70,7 +71,7 @@ public class TokenService {
 
         // 检查 Refresh Token
         String refreshKey = TOKEN_PREFIX + "refresh:" + token;
-        userIdStr = redisTemplate.opsForValue().get(refreshKey);
+        userIdStr = (String) redisTemplate.opsForValue().get(refreshKey);
 
         if (userIdStr != null) {
             return Long.parseLong(userIdStr);
