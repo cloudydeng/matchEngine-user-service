@@ -26,6 +26,31 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  # 应用名称
+  app:
+    name: Match Engine
+
+  # 邮件配置
+  spring:
+    mail:
+      host: smtp.gmail.com
+      port: 587
+      username: your-email@gmail.com
+      password: your-app-password
+      protocol: smtps
+      default-encoding: UTF-8
+      properties:
+        mail:
+          smtp:
+            auth: true
+            starttls:
+              enable: true
+              required: true
+            connectiontimeout: 10000
+            timeout: 10000
+            writetimeout: 10000
+      from: Match Engine <noreply@matchengine.com>
+
   # Redis 配置
   data:
     redis:

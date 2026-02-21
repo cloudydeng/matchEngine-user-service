@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@org.springframework.context.annotation.Profile("!test")
 public class TokenService {
 
     @Autowired

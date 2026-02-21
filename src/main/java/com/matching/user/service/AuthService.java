@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@org.springframework.context.annotation.Profile("!test")
 public class AuthService {
 
     @Autowired
@@ -32,6 +33,9 @@ public class AuthService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -211,8 +215,11 @@ public class AuthService {
 
         log.info("Verification code sent: type={}, destination={}", type, destination);
 
-        // 实际应该发送到短信/邮件服务
-        // 这里简化处理，直接返回验证码用于测试
+        // 发送验证码到邮箱
+        if ("email".equals(type)) {
+            emailService.sendVerificationCode(destination, code);
+        }
+        // 短信服务可以后续添加
     }
 
     /**

@@ -4,40 +4,14 @@ server:
 spring:
   application:
     name: user-service
-
-  # 数据源配置
-  datasource:
-    url: jdbc:mysql://localhost:3306/match_engine?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    # 连接超时设置
-    hikari:
-      connection-timeout: 2000
-
-  # JPA 配置
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    naming:
-      physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-
-  # Redis 配置
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
-      timeout: 3000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
+  main:
+    banner-mode: off
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 # JWT 配置
 jwt:
