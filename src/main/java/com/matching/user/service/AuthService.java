@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +53,7 @@ public class AuthService {
     private static final String LOGIN_FAIL_PREFIX = "user:login:fail:";
     private static final String VERIFY_CODE_PREFIX = "user:verify:";
     private static final String RATE_LIMIT_PREFIX = "rate:limit:";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
      * 用户注册
@@ -109,8 +111,7 @@ public class AuthService {
         String failKey = LOGIN_FAIL_PREFIX + request.getUsername();
         Long failCount = (Long) redisTemplate.opsForValue().get(failKey);
         if (failCount != null && failCount >= 5) {
-            // 清除计数
-            redisTemplate.delete(failKey);
+            throw new RuntimeException("登录失败次数过多，请 15 分钟后重试");
         }
 
         // 2. 查找用户
@@ -195,14 +196,6 @@ public class AuthService {
      * 发送验证码
      */
     public void sendVerificationCode(String type, String destination) {
-        // 生成 6 位数字验证码
-        String code = String.format("%06d", (int)(Math.random() * 900000) + 100000);
-
-        // 保存到 Redis（5 分钟过期）
-        String key = VERIFY_CODE_PREFIX + type + ":" + destination;
-        redisTemplate.opsForValue().set(key, code);
-        redisTemplate.expire(key, 5, TimeUnit.MINUTES);
-
         // 限制发送频率
         String rateKey = RATE_LIMIT_PREFIX + type + ":" + destination;
         Long count = (Long) redisTemplate.opsForValue().get(rateKey);
@@ -212,6 +205,14 @@ public class AuthService {
 
         redisTemplate.opsForValue().increment(rateKey);
         redisTemplate.expire(rateKey, 1, TimeUnit.HOURS);
+
+        // 生成 6 位数字验证码
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+
+        // 保存到 Redis（5 分钟过期）
+        String key = VERIFY_CODE_PREFIX + type + ":" + destination;
+        redisTemplate.opsForValue().set(key, code);
+        redisTemplate.expire(key, 5, TimeUnit.MINUTES);
 
         log.info("Verification code sent: type={}, destination={}", type, destination);
 
@@ -245,6 +246,9 @@ public class AuthService {
      * 记录设备信息
      */
     private void recordDevice(Long userId, DeviceInfo deviceInfo) {
+        if (deviceInfo == null || deviceInfo.getDeviceId() == null || deviceInfo.getDeviceId().isBlank()) {
+            return;
+        }
         // 简化处理，实际应该保存到数据库
         String key = "device:" + deviceInfo.getDeviceId();
         redisTemplate.opsForHash().put(key, "userId", userId.toString());
